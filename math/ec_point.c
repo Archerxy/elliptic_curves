@@ -108,6 +108,10 @@ static jfieldID _N            = NULL;
 static jfieldID _A            = NULL;
 static jfieldID _B            = NULL;
 
+static mpz_t sm2_p, sm2_a, sm2_b, sm2_gx, sm2_gy, sm2_n;
+
+static mpz_t ec_p, ec_a, ec_b, ec_gx, ec_gy, ec_n;
+
 
 JNIEXPORT void JNICALL Java_com_archer_math_EcPoint_init
   (JNIEnv *env, jclass jcls) {
@@ -121,6 +125,22 @@ JNIEXPORT void JNICALL Java_com_archer_math_EcPoint_init
     _N = (*env)->GetFieldID(env, _curve_cls, "N", "[B");
     _A = (*env)->GetFieldID(env, _curve_cls, "A", "[B");
     _B = (*env)->GetFieldID(env, _curve_cls, "B", "[B");
+
+    
+    mpz_init_set_str(sm2_p, "fffffffeffffffffffffffffffffffffffffffff00000000ffffffffffffffff", 16);
+    mpz_init_set_str(sm2_a, "fffffffeffffffffffffffffffffffffffffffff00000000fffffffffffffffc", 16);
+    mpz_init_set_str(sm2_b, "28e9fa9e9d9f5e344d5a9e4bcf6509a7f39789f515ab8f92ddbcbd414d940e93", 16);
+    mpz_init_set_str(sm2_gx, "32c4ae2c1f1981195f9904466a39c9948fe30bbff2660be1715a4589334c74c7", 16);
+    mpz_init_set_str(sm2_gy, "bc3736a2f4f6779c59bdcee36b692153d0a9877cc62a474002df32e52139f0a0", 16);
+    mpz_init_set_str(sm2_n, "fffffffeffffffffffffffffffffffff7203df6b21c6052b53bbf40939d54123", 16);
+
+    
+    mpz_init_set_str(ec_p, "fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f", 16);
+    mpz_init_set_str(ec_a, "0", 16);
+    mpz_init_set_str(ec_b, "7", 16);
+    mpz_init_set_str(ec_gx, "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798", 16);
+    mpz_init_set_str(ec_gy, "483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8", 16);
+    mpz_init_set_str(ec_n, "fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141", 16);
 }
 
 
@@ -283,42 +303,23 @@ JNIEXPORT jobject JNICALL Java_com_archer_math_EcPoint_mul
     uint8_t dc[d_len];
     (*env)->GetByteArrayRegion(env, jd, 0, d_len, (jbyte *)dc);
 
-    mpz_t x, y, d, p, a, b, gx, gy;
+    mpz_t x, y, d;
     mpz_init(x);
     mpz_init(y);
     mpz_init(d);
-    mpz_init(p);
-    mpz_init(a);
-    mpz_init(b);
-    mpz_init(gx);
-    mpz_init(gy);
+
+    mpz_import(d, d_len, 1, 1, 0, 0, dc);
 
     if(curveId == 2) {
-      uint8_t P[32] = {255, 255, 255, 254, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255};
-      uint8_t A[32] = {255, 255, 255, 254, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 252};
-      uint8_t B[32] = {40, 233, 250, 158, 157, 159, 94, 52, 77, 90, 158, 75, 207, 101, 9, 167, 243, 151, 137, 245, 21, 171, 143, 146, 221, 188, 189, 65, 77, 148, 14, 147};
-      uint8_t Gx[32] = {50, 196, 174, 44, 31, 25, 129, 25, 95, 153, 4, 70, 106, 57, 201, 148, 143, 227, 11, 191, 242, 102, 11, 225, 113, 90, 69, 137, 51, 76, 116, 199};
-      uint8_t Gy[32] = {188, 55, 54, 162, 244, 246, 119, 156, 89, 189, 206, 227, 107, 105, 33, 83, 208, 169, 135, 124, 198, 42, 71, 64, 2, 223, 50, 229, 33, 57, 240, 160};
-      mpz_import(d, d_len, 1, 1, 0, 0, dc);
-      mpz_import(p, 32, 1, 1, 0, 0, P);
-      mpz_import(a, 32, 1, 1, 0, 0, A);
-      mpz_import(b, 32, 1, 1, 0, 0, B);
-      mpz_import(gx, 32, 1, 1, 0, 0, Gx);
-      mpz_import(gy, 32, 1, 1, 0, 0, Gy);
+      math_point_mul(x, y, d, sm2_p, sm2_a, sm2_b, sm2_gx, sm2_gy);
     } else if(curveId == 1) {
-      uint8_t P[32] = {255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 254, 255, 255, 252, 47};
-      uint8_t Gx[32] = {121, 190, 102, 126, 249, 220, 187, 172, 85, 160, 98, 149, 206, 135, 11, 7, 2, 155, 252, 219, 45, 206, 40, 217, 89, 242, 129, 91, 22, 248, 23, 152};
-      uint8_t Gy[32] = {72, 58, 218, 119, 38, 163, 196, 101, 93, 164, 251, 252, 14, 17, 8, 168, 253, 23, 180, 72, 166, 133, 84, 25, 156, 71, 208, 143, 251, 16, 212, 184};
-      mpz_import(d, d_len, 1, 1, 0, 0, dc);
-      mpz_import(p, 32, 1, 1, 0, 0, P);
-      mpz_set_ui(a, 0);
-      mpz_set_ui(b, 7);
-      mpz_import(gx, 32, 1, 1, 0, 0, Gx);
-      mpz_import(gy, 32, 1, 1, 0, 0, Gy);
+      math_point_mul(x, y, d, ec_p, ec_a, ec_b, ec_gx, ec_gy);
     } else {
+      mpz_clear(x);
+      mpz_clear(y);
+      mpz_clear(d);
       return NULL;
     }
-    math_point_mul(x, y, d, p, a, b, gx, gy);
 
     // {
     //   printf("x = %s\n", mpz_get_str(NULL, 16, x));
@@ -333,11 +334,6 @@ JNIEXPORT jobject JNICALL Java_com_archer_math_EcPoint_mul
     mpz_clear(x);
     mpz_clear(y);
     mpz_clear(d);
-    mpz_clear(p);
-    mpz_clear(a);
-    mpz_clear(b);
-    mpz_clear(gx);
-    mpz_clear(gy);
 
 
     // {
@@ -383,40 +379,29 @@ JNIEXPORT jobject JNICALL Java_com_archer_math_EcPoint_mulPoint
     (*env)->GetByteArrayRegion(env, jy, 0, y_len, (jbyte *)yc);
     (*env)->GetByteArrayRegion(env, jd, 0, d_len, (jbyte *)dc);
 
-    mpz_t x, y, d, p, a, b, gx, gy;
+    mpz_t x, y, d, gx, gy;
     mpz_init(x);
     mpz_init(y);
     mpz_init(d);
-    mpz_init(p);
-    mpz_init(a);
-    mpz_init(b);
     mpz_init(gx);
     mpz_init(gy);
+    mpz_import(d, d_len, 1, 1, 0, 0, dc);
+    mpz_import(gx, x_len, 1, 1, 0, 0, xc);
+    mpz_import(gy, y_len, 1, 1, 0, 0, yc);
 
     if(curveId == 2) {
-      uint8_t P[32] = {255, 255, 255, 254, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255};
-      uint8_t A[32] = {255, 255, 255, 254, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 0, 0, 0, 255, 255, 255, 255, 255, 255, 255, 252};
-      uint8_t B[32] = {40, 233, 250, 158, 157, 159, 94, 52, 77, 90, 158, 75, 207, 101, 9, 167, 243, 151, 137, 245, 21, 171, 143, 146, 221, 188, 189, 65, 77, 148, 14, 147};
-      uint8_t Gx[32] = {50, 196, 174, 44, 31, 25, 129, 25, 95, 153, 4, 70, 106, 57, 201, 148, 143, 227, 11, 191, 242, 102, 11, 225, 113, 90, 69, 137, 51, 76, 116, 199};
-      uint8_t Gy[32] = {188, 55, 54, 162, 244, 246, 119, 156, 89, 189, 206, 227, 107, 105, 33, 83, 208, 169, 135, 124, 198, 42, 71, 64, 2, 223, 50, 229, 33, 57, 240, 160};
-      mpz_import(d, d_len, 1, 1, 0, 0, dc);
-      mpz_import(p, 32, 1, 1, 0, 0, P);
-      mpz_import(a, 32, 1, 1, 0, 0, A);
-      mpz_import(b, 32, 1, 1, 0, 0, B);
-      mpz_import(gx, x_len, 1, 1, 0, 0, xc);
-      mpz_import(gy, y_len, 1, 1, 0, 0, yc);
+      math_point_mul(x, y, d, sm2_p, sm2_a, sm2_b, gx, gy);
     } else if(curveId == 1) {
-      uint8_t P[32] = {255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 254, 255, 255, 252, 47};
-      uint8_t Gx[32] = {121, 190, 102, 126, 249, 220, 187, 172, 85, 160, 98, 149, 206, 135, 11, 7, 2, 155, 252, 219, 45, 206, 40, 217, 89, 242, 129, 91, 22, 248, 23, 152};
-      uint8_t Gy[32] = {72, 58, 218, 119, 38, 163, 196, 101, 93, 164, 251, 252, 14, 17, 8, 168, 253, 23, 180, 72, 166, 133, 84, 25, 156, 71, 208, 143, 251, 16, 212, 184};
-      mpz_import(d, d_len, 1, 1, 0, 0, dc);
-      mpz_import(p, 32, 1, 1, 0, 0, P);
-      mpz_set_si(a, 0);
-      mpz_set_si(b, 7);
-      mpz_import(gx, x_len, 1, 1, 0, 0, xc);
-      mpz_import(gy, y_len, 1, 1, 0, 0, yc);
+      math_point_mul(x, y, d, ec_p, ec_a, ec_b, gx, gy);
+    } else {
+      mpz_clear(x);
+      mpz_clear(y);
+      mpz_clear(d);
+      mpz_clear(gx);
+      mpz_clear(gy);
+      return NULL;
     }
-    math_point_mul(x, y, d, p, a, b, gx, gy);
+    // math_point_mul(x, y, d, p, a, b, gx, gy);
 
     size_t lx = 32, ly = 32;
     uint8_t rxc[32], ryc[32];
@@ -426,9 +411,6 @@ JNIEXPORT jobject JNICALL Java_com_archer_math_EcPoint_mulPoint
     mpz_clear(x);
     mpz_clear(y);
     mpz_clear(d);
-    mpz_clear(p);
-    mpz_clear(a);
-    mpz_clear(b);
     mpz_clear(gx);
     mpz_clear(gy);
 

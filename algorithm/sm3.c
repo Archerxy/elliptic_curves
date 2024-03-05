@@ -1,4 +1,5 @@
-#include "alg.h"
+#include "sm3.h"
+
 
 #define SM3_BLOCK_SIZE 64
 
@@ -12,7 +13,7 @@
 #define SM3_ENDIAN32(a) (((a&0xff)<<24)|(((a>>8)&0xff)<<16)|(((a>>16)&0xff)<<8)|((a>>24)&0xff))
 
 
-int sm3CF(uint32_t *in, uint32_t *hash) {
+static int sm3CF(uint32_t *in, uint32_t *hash) {
     uint32_t W[68], W1[64];
     uint32_t a = hash[0], b = hash[1], c = hash[2], d = hash[3];
     uint32_t e = hash[4], f = hash[5], g = hash[6], h = hash[7];
@@ -67,7 +68,7 @@ int sm3CF(uint32_t *in, uint32_t *hash) {
     return 1;
 }
 
-int sm3(uint8_t *content, uint32_t content_len, uint8_t *hash) {
+void sm3(uint8_t *content, uint32_t content_len,  Hash32 *hash) {
     uint32_t hash_base[] = {0x7380166f, 0x4914b2b9, 0x172442d7, 0xda8a0600, 
                 0xa96f30bc, 0x163138aa, 0xe38dee4d, 0xb0fb0e4e};
     uint32_t buf[SM3_BLOCK_SIZE >> 2];
@@ -105,10 +106,11 @@ int sm3(uint8_t *content, uint32_t content_len, uint8_t *hash) {
     }
 
     for(int i = 0; i < 8; i++) {
-        hash[i*4] = (hash_base[i] >> 24)&0xff;
-        hash[i*4+1] = (hash_base[i] >> 16)&0xff;
-        hash[i*4+2] = (hash_base[i] >> 8)&0xff;
-        hash[i*4+3] = hash_base[i] & 0xff;
+        hash->h[i*4] = (hash_base[i] >> 24)&0xff;
+        hash->h[i*4+1] = (hash_base[i] >> 16)&0xff;
+        hash->h[i*4+2] = (hash_base[i] >> 8)&0xff;
+        hash->h[i*4+3] = hash_base[i] & 0xff;
     }
-    return 1;
 }
+
+

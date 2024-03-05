@@ -1,10 +1,9 @@
-#include "alg.h"
+#include "keccak256.h"
 
 #define SHA3_BLOCK_SIZE 136
-#define I64(x) x##LL
 #define SHA3_ROTL64(q, k) ((q << k) ^ (q >> (64 - k)))
 
-void keccak256Round(uint64_t *buf, uint64_t *hash) {
+static void keccak256Round(uint64_t *buf, uint64_t *hash) {
     uint8_t constant[]  = {
         1, 26, 94, 112, 31, 33, 121, 85, 14, 12, 53, 38, 63, 79, 93, 83, 82, 72, 22, 102, 121, 88, 33, 116,
         1, 6, 9, 22, 14, 20, 2, 12, 13, 19, 23, 15, 4, 24, 21, 8, 16, 5, 3, 18, 17, 11, 7, 10,
@@ -79,7 +78,7 @@ void keccak256Round(uint64_t *buf, uint64_t *hash) {
     }
 }
 
-int keccak256(uint8_t *content, uint32_t content_len, uint8_t *hash) {
+void keccak256(uint8_t *content, uint32_t content_len, Hash32 *hash) {
     uint64_t h[25] = {0}, buf[SHA3_BLOCK_SIZE/8];
     uint32_t offset = 0, output_len = 32;
     while(content_len >= SHA3_BLOCK_SIZE) {
@@ -95,6 +94,5 @@ int keccak256(uint8_t *content, uint32_t content_len, uint8_t *hash) {
         ((uint8_t*)buf)[SHA3_BLOCK_SIZE - 1] |= 0x80;
         keccak256Round(buf, h);
     }
-    memcpy(hash, h, output_len);
-    return 1;
+    memcpy(hash->h, h, output_len);
 }
