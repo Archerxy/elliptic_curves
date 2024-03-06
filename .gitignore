@@ -1,0 +1,6 @@
+jni/*
+lib/*
+test/*
+
+### VS Code ###
+.vscode/**
