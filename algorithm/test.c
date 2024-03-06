@@ -128,6 +128,28 @@ void sm4Test() {
     free(de_text);
 }
 
+void sm2CryptoTest() {
+    printf("****begin sm2 crypto test****\n");
+    EcPrivateKey sk;
+    EcPublicKey pk;
+    const uint8_t *msg = "nihao,dashabi";
+    uint8_t *cipher, *text;
+    size_t cipher_l, text_l;
+
+    sm2_key_gen(&sk, &pk);
+    printf("****start sm2 crypto test****\n");
+    sm2_encrypt(&pk, msg, strlen(msg), SM2_C1C3C2, &cipher, &cipher_l);
+    print_uints("cipher = ", cipher, cipher_l);
+    if(sm2_decrypt(&sk, cipher, cipher_l, SM2_C1C3C2, &text, &text_l)) {
+        char txt[text_l + 1];
+        memcpy(txt, text, text_l);
+        txt[text_l] = '\0';
+        printf("sm2 encrypt success. l = %d, txt = %s\n", text_l, txt);
+    } else {
+        printf("sm2 encrypt failed\n");
+    }
+}
+
 // gcc test.c -L. -lalg -O3 -o test.exe
 int main() {
 
@@ -135,7 +157,8 @@ int main() {
     // secTest();
     // sm4Test();
 
-    sm2CostTest();
+    // sm2CostTest();
+    sm2CryptoTest();
 
     return 0;
 }

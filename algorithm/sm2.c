@@ -1,4 +1,4 @@
-#include "sm2p256v1.h"
+#include "sm2.h"
 
 typedef struct sm2p256v1_curve {
     mpz_t p, a, b, gx, gy, n;
@@ -8,7 +8,7 @@ static pthread_mutex_t _sm2p256v1_lock = PTHREAD_MUTEX_INITIALIZER;
 static sm2p256v1_curve *_sm2p256v1 = NULL;
 
 // userId = "1234567812345678"
-static void sm2p256v1_get_za(uint8_t *x, uint8_t *y, uint8_t *msg, size_t msg_len, Hash32 *out) {
+static void sm2p256v1_get_za(uint8_t *x, uint8_t *y, const uint8_t *msg, size_t msg_len, Hash32 *out) {
     uint8_t base[146] = {0,-128,49,50,51,52,53,54,55,56,49,50,51,52,53,54,55,
                 56,-1,-1,-1,-2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
                 -1,-1,-1,0,0,0,0,-1,-1,-1,-1,-1,-1,-1,-4,40,-23,-6,-98,
@@ -68,6 +68,29 @@ static void sm2p256v1_cal_rs(mpz_t d, mpz_t e, mpz_t r, mpz_t s) {
     mpz_clear(ky);
 }
 
+static void kdf(uint8_t *c1x, size_t x_l, uint8_t *c1y, size_t y_l, uint8_t *c2, size_t c2_l) {
+    size_t l = x_l + y_l, off = 0, ct = 0, digest_size = 32;
+    Hash32 buf;
+    uint8_t *in = malloc(l + 4);
+    memcpy(in, c1x, x_l);
+    memcpy(in + x_l, c1y, y_l);
+    while(off < c2_l) {
+        ++ct;
+        in[l] = (ct >> 24) & 0xff;
+        in[l+1] = (ct >> 16) & 0xff;
+        in[l+2] = (ct >> 8) & 0xff;
+        in[l+3] = ct & 0xff;
+
+        sm3(in, l+4, &buf);
+        digest_size = (c2_l - off) > 32 ? 32 : (c2_l - off);
+        for(int i = 0; i < digest_size; i++) {
+            c2[off + i] ^= buf.h[i];
+        }
+        off += digest_size;
+    }
+    free(in);
+}
+
 static void sm2p256v1_init() {
     pthread_mutex_lock(&_sm2p256v1_lock);
     if(!_sm2p256v1) {
@@ -80,6 +103,137 @@ static void sm2p256v1_init() {
         mpz_init_set_str(_sm2p256v1->n, "fffffffeffffffffffffffffffffffff7203df6b21c6052b53bbf40939d54123", 16);
     }
     pthread_mutex_unlock(&_sm2p256v1_lock);
+}
+
+void sm2_key_gen(EcPrivateKey *sk, EcPublicKey *pk) {
+    if(!sk || !pk) {
+        return ;
+    }
+    ec_random_k(sk->d, (uint16_t)((int64_t) (pk)));
+    sm2p256v1_privateKey_to_publicKey(sk, pk);
+}
+
+
+void sm2_encrypt(EcPublicKey *pk, const uint8_t *msg, size_t msg_len, int mode, uint8_t **out, size_t *out_len) {
+    if(!pk || !msg) {
+        return ;
+    }
+    uint8_t raw_k[32];
+    ec_random_k(raw_k, (uint16_t) ((int64_t) raw_k));
+    
+    mpz_t k, kx, ky, kpx, kpy, x, y;
+    mpz_init(k);
+    mpz_init(kx);
+    mpz_init(ky);
+    mpz_init(kpx);
+    mpz_init(kpy);
+    mpz_init(x);
+    mpz_init(y);
+    mpz_import(k, 32, 1, 1, 0, 0, raw_k);
+    mpz_import(x, 32, 1, 1, 0, 0, pk->x);
+    mpz_import(y, 32, 1, 1, 0, 0, pk->y);
+
+    ec_point_mul(kx, ky, k, _sm2p256v1->p, _sm2p256v1->a, _sm2p256v1->b, _sm2p256v1->gx, _sm2p256v1->gy);
+    ec_point_mul(kpx, kpy, k, _sm2p256v1->p, _sm2p256v1->a, _sm2p256v1->b, x, y);
+
+    Hash32 c3;
+    uint8_t xc[32], yc[32], c1x[32], c1y[32], *c2 = malloc(msg_len);
+    size_t lx = 32, ly = 32, c1_xl = 32, c1_yl = 32;
+
+    mpz_export(c1x, &c1_xl, 1, 1, 0, 0, kx);
+    mpz_export(c1y, &c1_yl, 1, 1, 0, 0, ky);
+    
+    mpz_export(xc, &lx, 1, 1, 0, 0, kpx);
+    mpz_export(yc, &ly, 1, 1, 0, 0, kpy);
+
+    memcpy(c2, msg, msg_len);
+    kdf(xc, lx, yc, ly, c2, msg_len);
+    
+    *out_len = 65 + msg_len + 32;
+    *out = malloc(*out_len);
+    memset(*out, 0, *out_len);
+
+    memcpy(*out, xc + (32 - lx), lx);
+    memcpy((*out) + 32, msg, msg_len);
+    memcpy((*out) + (32 + msg_len), yc + (32 - ly), ly);
+    sm3(*out, 64 + msg_len, &c3);
+
+    memset(*out, 0, *out_len);
+    (*out)[0] = 4;
+    memcpy((*out) + 1, c1x + (32 - c1_xl), c1_xl);
+    memcpy((*out) + 33, c1y+ (32 - c1_yl), c1_yl);
+    if(SM2_C1C2C3 == mode) {
+        memcpy((*out) + 65, c2, msg_len);
+        memcpy((*out) + (65 + msg_len), c3.h, 32);
+    } else if(SM2_C1C3C2 == mode) {
+        memcpy((*out) + 65, c3.h, 32);
+        memcpy((*out) + 97, c2, msg_len);
+    }
+    free(c2);
+    mpz_clear(k);
+    mpz_clear(kx);
+    mpz_clear(ky);
+    mpz_clear(kpx);
+    mpz_clear(kpy);
+    mpz_clear(x);
+    mpz_clear(y);
+}
+
+
+int sm2_decrypt(EcPrivateKey *sk, const uint8_t *cipher, size_t cipher_len, int mode, uint8_t **out, size_t *out_len) {
+    if(cipher_len <= 97) {
+        return 0;
+    }
+    int ret = 1;
+    *out_len =  cipher_len - 65 - 32;
+    *out = malloc(*out_len);
+    uint8_t c1[65], *c2 = (*out), c3[32];
+    memcpy(c1, cipher, 65);
+    if(SM2_C1C2C3 == mode) {
+        memcpy(c2, cipher + 65, cipher_len - 65 - 32);
+        memcpy(c3, cipher + (cipher_len - 32), 32);
+    } else if(SM2_C1C3C2 == mode) {
+        memcpy(c3, cipher + 65, 32);
+        memcpy(c2, cipher + 97, cipher_len - 97);
+    }
+
+    mpz_t x, y, d, kx, ky;
+    mpz_init(x);
+    mpz_init(y);
+    mpz_init(d);
+    mpz_init(kx);
+    mpz_init(ky);
+    mpz_import(d, 32, 1, 1, 0, 0, sk->d);
+    mpz_import(kx, 32, 1, 1, 0, 0, c1+1);
+    mpz_import(ky, 32, 1, 1, 0, 0, c1+33);
+    ec_point_mul(x, y, d, _sm2p256v1->p, _sm2p256v1->a, _sm2p256v1->b, kx, ky);
+
+    Hash32 c3_cpy;
+    uint8_t xc[32], yc[32], *hash_in = malloc(64 + *out_len);
+    size_t lx = 32, ly = 32;
+    mpz_export(xc, &lx, 1, 1, 0, 0, x);
+    mpz_export(yc, &ly, 1, 1, 0, 0, y);
+
+    kdf(xc, lx, yc, ly, c2, *out_len);
+    memcpy(hash_in, xc+(32-lx), lx);
+    memcpy(hash_in + 32, c2, *out_len);
+    memcpy(hash_in + (32 + *out_len), yc+(32-lx), ly);
+
+    sm3(hash_in, 64 + *out_len, &c3_cpy);
+    for(int i = 0; i < 32; i++) {
+        if(c3[i] != c3_cpy.h[i]) {
+            ret = 0;
+            break ;
+        }
+    }
+    free(hash_in);
+    mpz_clear(x);
+    mpz_clear(y);
+    mpz_clear(d);
+    mpz_clear(kx);
+    mpz_clear(ky);
+
+    return ret;
 }
 
 void sm2p256v1_privateKey_to_publicKey(EcPrivateKey *sk, EcPublicKey *pk) {    
@@ -109,7 +263,7 @@ void sm2p256v1_privateKey_to_publicKey(EcPrivateKey *sk, EcPublicKey *pk) {
     mpz_clear(d);
 }
 
-void sm2p256v1_sign(EcPrivateKey *sk, uint8_t *msg, size_t msg_len, EcSignature *sig) {
+void sm2p256v1_sign(EcPrivateKey *sk, const uint8_t *msg, size_t msg_len, EcSignature *sig) {
     if(!sk || !msg || !sig) {
         return ;
     }
@@ -147,7 +301,7 @@ void sm2p256v1_sign(EcPrivateKey *sk, uint8_t *msg, size_t msg_len, EcSignature 
 }
 
 
-int sm2p256v1_verify(EcPublicKey *pk, uint8_t *msg, size_t msg_len, EcSignature *sig) {
+int sm2p256v1_verify(EcPublicKey *pk, const uint8_t *msg, size_t msg_len, EcSignature *sig) {
     if(!pk || !msg || !sig) {
         return 0;
     }

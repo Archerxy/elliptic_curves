@@ -78,7 +78,7 @@ static void keccak256Round(uint64_t *buf, uint64_t *hash) {
     }
 }
 
-void keccak256(uint8_t *content, uint32_t content_len, Hash32 *hash) {
+void keccak256(const uint8_t *content, uint32_t content_len, Hash32 *hash) {
     uint64_t h[25] = {0}, buf[SHA3_BLOCK_SIZE/8];
     uint32_t offset = 0, output_len = 32;
     while(content_len >= SHA3_BLOCK_SIZE) {
