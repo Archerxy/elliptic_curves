@@ -8,18 +8,20 @@ static pthread_mutex_t _secp256k1_lock = PTHREAD_MUTEX_INITIALIZER;
 static secp256k1_curve *_secp256k1 = NULL;
 
 static void secp256k1_init() {
-    pthread_mutex_lock(&_secp256k1_lock);
     if(!_secp256k1) {
-        _secp256k1 = (secp256k1_curve *)malloc(sizeof(secp256k1_curve));
-        mpz_init_set_str(_secp256k1->p, "fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f", 16);
-        mpz_init_set_ui(_secp256k1->a, 0);
-        mpz_init_set_ui(_secp256k1->b, 7);
-        mpz_init_set_str(_secp256k1->gx, "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798", 16);
-        mpz_init_set_str(_secp256k1->gy, "483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8", 16);
-        mpz_init_set_str(_secp256k1->n, "fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141", 16);
-        mpz_init_set_ui(_secp256k1->_0, 0);
+        pthread_mutex_lock(&_secp256k1_lock);
+        if(!_secp256k1) {
+            _secp256k1 = (secp256k1_curve *)malloc(sizeof(secp256k1_curve));
+            mpz_init_set_str(_secp256k1->p, "fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f", 16);
+            mpz_init_set_ui(_secp256k1->a, 0);
+            mpz_init_set_ui(_secp256k1->b, 7);
+            mpz_init_set_str(_secp256k1->gx, "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798", 16);
+            mpz_init_set_str(_secp256k1->gy, "483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8", 16);
+            mpz_init_set_str(_secp256k1->n, "fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141", 16);
+            mpz_init_set_ui(_secp256k1->_0, 0);
+        }
+        pthread_mutex_unlock(&_secp256k1_lock);
     }
-    pthread_mutex_unlock(&_secp256k1_lock);
 }
 
 void secp256k1_privateKey_to_publicKey(EcPrivateKey *sk, EcPublicKey *pk) {    
@@ -158,7 +160,7 @@ int secp256k1_get_v(EcSignature *sig) {
     return (sig->r[31] & 1) + 27;
 }
 
-void secp256k1_recover_public_key(EcSignature *sig, const uint8_t *msg, size_t msg_len, EcPublicKey *pk) {
+void secp256k1_recover_publicKey(EcSignature *sig, const uint8_t *msg, size_t msg_len, EcPublicKey *pk) {
     if(!sig || !msg || !pk) {
         return ;
     }

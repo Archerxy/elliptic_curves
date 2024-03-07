@@ -81,7 +81,7 @@ void secTest() {
 
     print_uints("pk = ", p, 64);
     EcPublicKey pk_new;
-    secp256k1_recover_public_key(&sig, d, 32, &pk_new);
+    secp256k1_recover_publicKey(&sig, d, 32, &pk_new);
     print_uints("pk_new = ", (uint8_t *)&pk_new, 64);
 }
 
@@ -157,7 +157,8 @@ int main() {
     // secTest();
     // sm4Test();
 
-    // sm2CostTest();
+    sm2CostTest();
+
     sm2CryptoTest();
 
     return 0;
