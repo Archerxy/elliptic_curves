@@ -3,6 +3,6 @@
 
 #include "archer.h"
 
-void keccak256(const uint8_t *content, uint32_t content_len, Hash32 *hash);
+void keccak256(const uint8_t *content, const size_t content_len, Hash32 *hash);
 
 #endif

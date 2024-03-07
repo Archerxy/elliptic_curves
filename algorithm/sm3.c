@@ -68,31 +68,31 @@ static int sm3CF(uint32_t *in, uint32_t *hash) {
     return 1;
 }
 
-void sm3(const uint8_t *content, uint32_t content_len,  Hash32 *hash) {
+void sm3(const uint8_t *content, const size_t content_len,  Hash32 *hash) {
     uint32_t hash_base[] = {0x7380166f, 0x4914b2b9, 0x172442d7, 0xda8a0600, 
                 0xa96f30bc, 0x163138aa, 0xe38dee4d, 0xb0fb0e4e};
     uint32_t buf[SM3_BLOCK_SIZE >> 2];
-    uint32_t count = 0, offset = 0;
-    while(content_len >= SM3_BLOCK_SIZE) {
+    uint32_t count = 0, offset = 0, len = content_len;
+    while(len >= SM3_BLOCK_SIZE) {
         memcpy(buf, &content[offset], SM3_BLOCK_SIZE);
-        content_len -= SM3_BLOCK_SIZE;
+        len -= SM3_BLOCK_SIZE;
         offset += SM3_BLOCK_SIZE;
         count++;
 
         sm3CF(buf, hash_base);
     }
 
-    int32_t k = 448 - (8 * content_len + 1) % 512;
+    int32_t k = 448 - (8 * len + 1) % 512;
     if(k < 0) {
-        k = 960 - (8 * content_len + 1) % 512;
+        k = 960 - (8 * len + 1) % 512;
     }
     k++;
-    uint64_t count_len = (content_len * 8) + count * (SM3_BLOCK_SIZE * 8);
-    uint32_t rest_len = content_len + k / 8 + SM3_BLOCK_SIZE / 8;
+    uint64_t count_len = (len * 8) + count * (SM3_BLOCK_SIZE * 8);
+    uint32_t rest_len = len + k / 8 + SM3_BLOCK_SIZE / 8;
     uint8_t rest[rest_len];
     memset(rest, 0, rest_len);
-    memcpy(rest, &content[offset], content_len);
-    rest[content_len] = 0x80;
+    memcpy(rest, &content[offset], len);
+    rest[len] = 0x80;
     for(int i = 1; i <= 8; i++) {
         rest[rest_len - i] = (count_len >> ((i - 1) * 8)) & 0xff;
     }

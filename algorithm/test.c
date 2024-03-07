@@ -154,8 +154,8 @@ void sm2CryptoTest() {
 int main() {
 
     // sm2Test();
-    // secTest();
-    // sm4Test();
+    secTest();
+    sm4Test();
 
     sm2CostTest();
 

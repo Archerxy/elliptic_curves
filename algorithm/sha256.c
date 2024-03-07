@@ -65,26 +65,26 @@ static void sha256Round(uint32_t *buf, uint32_t *hash) {
     hash[7] = hash[7] + h;
 }
 
-void sha256(const uint8_t *content, uint32_t content_len, Hash32 *hash) {
+void sha256(const uint8_t *content, const size_t content_len, Hash32 *hash) {
     uint32_t base[] = {
         0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 
         0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
     };
     uint32_t buf[SHA256_BLOCK_SIZE];
-    uint32_t count = 0, offset = 0;
-    while(content_len >= SHA256_BLOCK_SIZE) {
+    uint32_t count = 0, offset = 0, len = content_len;
+    while(len >= SHA256_BLOCK_SIZE) {
         memcpy(buf, &content[offset], SHA256_BLOCK_SIZE);
-        content_len -= SHA256_BLOCK_SIZE;
+        len -= SHA256_BLOCK_SIZE;
         offset += SHA256_BLOCK_SIZE;
         count++;
 
         sha256Round(buf, base);
     }
-    uint32_t count_len = (content_len * 8) + count * (SHA256_BLOCK_SIZE * 8);
-    memcpy(buf, &content[offset], content_len);
-    memset(((uint8_t*)buf) + content_len, 0, SHA256_BLOCK_SIZE - content_len);
+    uint32_t count_len = (len * 8) + count * (SHA256_BLOCK_SIZE * 8);
+    memcpy(buf, &content[offset], len);
+    memset(((uint8_t*)buf) + len, 0, SHA256_BLOCK_SIZE - len);
 
-    ((uint8_t*)buf)[content_len] = 0x80;
+    ((uint8_t*)buf)[len] = 0x80;
     buf[SHA256_BLOCK_SIZE/4-1] = SHA256_ENDIAN(count_len);
     
     sha256Round(buf, base);

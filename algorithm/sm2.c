@@ -8,7 +8,7 @@ static pthread_mutex_t _sm2p256v1_lock = PTHREAD_MUTEX_INITIALIZER;
 static sm2p256v1_curve *_sm2p256v1 = NULL;
 
 // userId = "1234567812345678"
-static void sm2p256v1_get_za(uint8_t *x, uint8_t *y, const uint8_t *msg, size_t msg_len, Hash32 *out) {
+static void sm2p256v1_get_za(const uint8_t *x, const uint8_t *y, const uint8_t *msg, const size_t msg_len, Hash32 *out) {
     uint8_t base[146] = {0,-128,49,50,51,52,53,54,55,56,49,50,51,52,53,54,55,
                 56,-1,-1,-1,-2,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
                 -1,-1,-1,0,0,0,0,-1,-1,-1,-1,-1,-1,-1,-4,40,-23,-6,-98,
@@ -116,7 +116,7 @@ void sm2_key_gen(EcPrivateKey *sk, EcPublicKey *pk) {
 }
 
 
-void sm2_encrypt(EcPublicKey *pk, const uint8_t *msg, size_t msg_len, int mode, uint8_t **out, size_t *out_len) {
+void sm2_encrypt(const EcPublicKey *pk, const uint8_t *msg, const size_t msg_len, const int mode, uint8_t **out, size_t *out_len) {
     if(!pk || !msg) {
         return ;
     }
@@ -185,7 +185,7 @@ void sm2_encrypt(EcPublicKey *pk, const uint8_t *msg, size_t msg_len, int mode, 
 }
 
 
-int sm2_decrypt(EcPrivateKey *sk, const uint8_t *cipher, size_t cipher_len, int mode, uint8_t **out, size_t *out_len) {
+int sm2_decrypt(const EcPrivateKey *sk, const uint8_t *cipher, const size_t cipher_len, const int mode, uint8_t **out, size_t *out_len) {
     if(cipher_len <= 97) {
         return 0;
     }
@@ -244,7 +244,7 @@ int sm2_decrypt(EcPrivateKey *sk, const uint8_t *cipher, size_t cipher_len, int 
     return ret;
 }
 
-void sm2p256v1_privateKey_to_publicKey(EcPrivateKey *sk, EcPublicKey *pk) {    
+void sm2p256v1_privateKey_to_publicKey(const EcPrivateKey *sk, EcPublicKey *pk) {    
     if(!sk || !pk) {
         return ;
     }
@@ -271,7 +271,7 @@ void sm2p256v1_privateKey_to_publicKey(EcPrivateKey *sk, EcPublicKey *pk) {
     mpz_clear(d);
 }
 
-void sm2p256v1_sign(EcPrivateKey *sk, const uint8_t *msg, size_t msg_len, EcSignature *sig) {
+void sm2p256v1_sign(const EcPrivateKey *sk, const uint8_t *msg, const size_t msg_len, EcSignature *sig) {
     if(!sk || !msg || !sig) {
         return ;
     }
@@ -309,7 +309,7 @@ void sm2p256v1_sign(EcPrivateKey *sk, const uint8_t *msg, size_t msg_len, EcSign
 }
 
 
-int sm2p256v1_verify(EcPublicKey *pk, const uint8_t *msg, size_t msg_len, EcSignature *sig) {
+int sm2p256v1_verify(const EcPublicKey *pk, const uint8_t *msg, const size_t msg_len, const EcSignature *sig) {
     if(!pk || !msg || !sig) {
         return 0;
     }

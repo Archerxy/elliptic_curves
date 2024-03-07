@@ -24,7 +24,15 @@ static void secp256k1_init() {
     }
 }
 
-void secp256k1_privateKey_to_publicKey(EcPrivateKey *sk, EcPublicKey *pk) {    
+void secp256k1_key_gen(EcPrivateKey *sk, EcPublicKey *pk) {
+    if(!sk || !pk) {
+        return ;
+    }
+    ec_random_k(sk->d, (uint16_t)((int64_t) (pk)));
+    secp256k1_privateKey_to_publicKey(sk, pk);
+}
+
+void secp256k1_privateKey_to_publicKey(const EcPrivateKey *sk, EcPublicKey *pk) {    
     if(!sk || !pk) {
         return ;
     }
@@ -51,7 +59,7 @@ void secp256k1_privateKey_to_publicKey(EcPrivateKey *sk, EcPublicKey *pk) {
     mpz_clear(d);
 }
 
-void secp256k1_sign(EcPrivateKey *sk, const uint8_t *msg, size_t msg_len, EcSignature *sig) {
+void secp256k1_sign(const EcPrivateKey *sk, const uint8_t *msg, const size_t msg_len, EcSignature *sig) {
     if(!sk || !msg || !sig) {
         return ;
     }
@@ -100,7 +108,7 @@ void secp256k1_sign(EcPrivateKey *sk, const uint8_t *msg, size_t msg_len, EcSign
 }
 
 
-int secp256k1_verify(EcPublicKey *pk, const uint8_t *msg, size_t msg_len, EcSignature *sig) {
+int secp256k1_verify(const EcPublicKey *pk, const uint8_t *msg, const size_t msg_len, const EcSignature *sig) {
     if(!pk || !msg || !sig) {
         return 0;
     }
@@ -153,14 +161,14 @@ int secp256k1_verify(EcPublicKey *pk, const uint8_t *msg, size_t msg_len, EcSign
     return ret;
 }
 
-int secp256k1_get_v(EcSignature *sig) {
+int secp256k1_get_v(const EcSignature *sig) {
     if(!sig) {
         return 0;
     }
     return (sig->r[31] & 1) + 27;
 }
 
-void secp256k1_recover_publicKey(EcSignature *sig, const uint8_t *msg, size_t msg_len, EcPublicKey *pk) {
+void secp256k1_recover_publicKey(const EcSignature *sig, const uint8_t *msg, const size_t msg_len, EcPublicKey *pk) {
     if(!sig || !msg || !pk) {
         return ;
     }
