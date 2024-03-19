@@ -1,14 +1,19 @@
 #include "ec_point.h"
 
 void ec_point_mul(mpz_t x, mpz_t y, mpz_t d, mpz_t p, mpz_t a, mpz_t b, mpz_t gx, mpz_t gy) {
-    char *bits = mpz_get_str(NULL, 2, d);
-    uint32_t len = strlen(bits);
+    // char *bits = mpz_get_str(NULL, 2, d);
+    // uint32_t len = strlen(bits);
+
+    uint32_t len = mpz_sizeinbase(d, 2);
+
     mpz_t inv, k, tx, ty;
     mpz_init(inv);
     mpz_init(k);
     mpz_init_set(tx, gx);
     mpz_init_set(ty, gy);
-    for(int i = 1; i < len; i++) {
+    // for(int i = 1; i < len; i++) {
+    
+    for(int i = len - 2; i >= 0; --i) {
 
         /**double**/ 
         mpz_mul_ui(inv, ty, 2);
@@ -32,7 +37,8 @@ void ec_point_mul(mpz_t x, mpz_t y, mpz_t d, mpz_t p, mpz_t a, mpz_t b, mpz_t gx
         mpz_set(tx, x);
         mpz_set(ty, y);
         /**add**/
-        if(bits[i] == '1') {
+        // if(bits[i] == '1') {
+        if(mpz_tstbit(d, i)) {
 
             mpz_sub(inv, tx, gx);
             mpz_invert(inv, inv, p);

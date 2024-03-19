@@ -20,11 +20,11 @@ static void print_uints(const char *name, uint8_t *bs, size_t len) {
 }
 
 
-static void print_mpz(const char *name, mpz_t n) {
-    char *hex = mpz_get_str(NULL, 16, n);
-    printf("%s%s\n", name, hex);
-    fflush(stdout);
-}
+// static void print_mpz(const char *name, mpz_t n) {
+//     char *hex = mpz_get_str(NULL, 16, n);
+//     printf("%s%s\n", name, hex);
+//     fflush(stdout);
+// }
 
 void sm2CostTest() {
     printf("****begin sm2 sign cost test****\n");
@@ -48,7 +48,7 @@ void sm2CostTest() {
         sm2p256v1_sign(&sk, d, 32, &sig);
     }
     t2 = clock();
-    printf("sm2 sign result:\n round: %d\n cost: %llums\n", count, t2 - t1);
+    printf("sm2 sign result:\n round: %d\n cost: %ldms\n", count, t2 - t1);
     printf("****start sm2 verify cost test****\n");
     t3 = clock();
     for(int i = 0; i < count; i++) {
@@ -58,7 +58,7 @@ void sm2CostTest() {
         }
     }
     t4 = clock();
-    printf("sm2 verify result:\n round: %d\n cost: %llums\n", count, t4 - t3);
+    printf("sm2 verify result:\n round: %d\n cost: %ldms\n", count, t4 - t3);
 }
 
 void secTest() {
@@ -110,11 +110,11 @@ void sm4Test() {
     uint8_t *cipher = NULL, *de_text = NULL;
     size_t cipher_len = 0, de_text_len = 0;
     sm4_encrypt(key, text, strlen(text), &cipher, &cipher_len);
-    printf("text_len = %d, ciper_len = %d\n", strlen(text), cipher_len);
+    printf("text_len = %lu, ciper_len = %d\n", strlen(text), cipher_len);
     print_uints("cipher = ", cipher, cipher_len);
 
     if(sm4_decrypt(key, cipher, cipher_len, &de_text, &de_text_len)) {
-        printf("de_text_len = %d\n", de_text_len);
+        printf("de_text_len = %lu\n", de_text_len);
         char txt[de_text_len + 1];
         memcpy(txt, de_text, de_text_len);
         txt[de_text_len] = '\0';
@@ -144,22 +144,25 @@ void sm2CryptoTest() {
         char txt[text_l + 1];
         memcpy(txt, text, text_l);
         txt[text_l] = '\0';
-        printf("sm2 encrypt success. l = %d, txt = %s\n", text_l, txt);
+        printf("sm2 encrypt success. l = %lu, txt = %s\n", text_l, txt);
     } else {
         printf("sm2 encrypt failed\n");
     }
 }
 
+
 // gcc test.c -L. -lalg -O3 -o test.exe
 int main() {
 
     // sm2Test();
-    secTest();
-    sm4Test();
+    // secTest();
+    // sm4Test();
 
     sm2CostTest();
 
-    sm2CryptoTest();
+    // sm2CryptoTest();
+
+    // testBits();
 
     return 0;
 }
