@@ -136,11 +136,11 @@ void sm2CryptoTest() {
     uint8_t *cipher, *text;
     size_t cipher_l, text_l;
 
-    sm2_key_gen(&sk, &pk);
+    sm2p256v1_key_gen(&sk, &pk);
     printf("****start sm2 crypto test****\n");
-    sm2_encrypt(&pk, msg, strlen(msg), SM2_C1C3C2, &cipher, &cipher_l);
+    sm2p256v1_encrypt(&pk, msg, strlen(msg), SM2_C1C3C2, &cipher, &cipher_l);
     print_uints("cipher = ", cipher, cipher_l);
-    if(sm2_decrypt(&sk, cipher, cipher_l, SM2_C1C3C2, &text, &text_l)) {
+    if(sm2p256v1_decrypt(&sk, cipher, cipher_l, SM2_C1C3C2, &text, &text_l)) {
         char txt[text_l + 1];
         memcpy(txt, text, text_l);
         txt[text_l] = '\0';

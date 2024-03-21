@@ -1,4 +1,4 @@
-#include "sm2.h"
+#include "sm2p256v1.h"
 
 typedef struct sm2p256v1_curve {
     mpz_t p, a, b, gx, gy, n;
@@ -107,7 +107,7 @@ static void sm2p256v1_init() {
     }
 }
 
-void sm2_key_gen(EcPrivateKey *sk, EcPublicKey *pk) {
+void sm2p256v1_key_gen(EcPrivateKey *sk, EcPublicKey *pk) {
     if(!sk || !pk) {
         return ;
     }
@@ -116,7 +116,7 @@ void sm2_key_gen(EcPrivateKey *sk, EcPublicKey *pk) {
 }
 
 
-void sm2_encrypt(const EcPublicKey *pk, const uint8_t *msg, const size_t msg_len, const int mode, uint8_t **out, size_t *out_len) {
+void sm2p256v1_encrypt(const EcPublicKey *pk, const uint8_t *msg, const size_t msg_len, const int mode, uint8_t **out, size_t *out_len) {
     if(!pk || !msg) {
         return ;
     }
@@ -185,7 +185,7 @@ void sm2_encrypt(const EcPublicKey *pk, const uint8_t *msg, const size_t msg_len
 }
 
 
-int sm2_decrypt(const EcPrivateKey *sk, const uint8_t *cipher, const size_t cipher_len, const int mode, uint8_t **out, size_t *out_len) {
+int sm2p256v1_decrypt(const EcPrivateKey *sk, const uint8_t *cipher, const size_t cipher_len, const int mode, uint8_t **out, size_t *out_len) {
     if(cipher_len <= 97) {
         return 0;
     }
