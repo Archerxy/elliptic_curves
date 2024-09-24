@@ -150,19 +150,143 @@ void sm2CryptoTest() {
     }
 }
 
+void paillierTestInn() {
+    PaillierPrivateKey *sk = (PaillierPrivateKey *)malloc(sizeof(PaillierPrivateKey));
+    PaillierPublicKey *pk = (PaillierPublicKey *)malloc(sizeof(PaillierPublicKey));
+
+    memset(sk->n, 0, 128);
+    memset(sk->l, 0, 128);
+    memset(pk->n, 0, 128);
+    sk->n[126] = 2;
+    sk->n[127] = 201;
+    sk->l[126] = 1;
+    sk->l[127] = 74;
+    pk->n[126] = 2;
+    pk->n[127] = 201;
+
+
+    uint8_t m[1] = {8};
+    uint8_t *cipher = NULL;
+    size_t cipher_len = 0;
+    uint8_t *decrypt_m = NULL;
+    size_t decrypt_len = 0;
+    paillier_encrypt(pk, m, 1, &cipher, &cipher_len);
+    paillier_decrypt(sk, cipher, cipher_len, &decrypt_m, &decrypt_len);
+
+    printf("after dec decrypt_len = %d, decrypt_m[0] = %d\n", decrypt_len, decrypt_m[0]);
+    char buf[decrypt_len + 1];
+    memcpy(buf, decrypt_m, decrypt_len);
+    buf[decrypt_len] = '\0';
+    printf("decrypt msg = %s, len = %d\n", buf, decrypt_len);
+
+
+
+
+    // const uint8_t m1[1] = {97}, m2[1] = {96};
+    // uint8_t *c1 = NULL, *c2 = NULL, *c_add = NULL, *c_add_de = NULL;
+    // size_t *c1_len = 0, *c2_len = 0, *c_add_len = 0, *c_add_de_len = 0;
+    // paillier_encrypt(pk, m1, 1, &c1, c1_len);
+    // paillier_encrypt(pk, m2, 1, &c2, c2_len);
+    // paillier_add(pk, c1, *c1_len, c2, *c2_len, &c_add, c_add_len);
+    // paillier_decrypt(sk, c_add, *c_add_len, &c_add_de, c_add_de_len);
+
+    // char buf_add[(*c_add_de_len) + 1];
+    // memcpy(buf_add, c_add_de, *c_add_de_len);
+    // buf_add[*c_add_de_len] = '\0';
+    // printf("add decrypt msg = %s, len = %d\n", buf_add, *c_add_de_len);
+
+
+
+
+    // const uint8_t m_mul[1] = {10};
+    // uint8_t *c_mul = NULL, *c_mul_de = NULL;
+    // size_t *c_mul_len = 0, *c_mul_de_len = 0;
+    // paillier_mul(pk, c1, *c1_len, m_mul, 1, &c_mul, c_mul_len);
+    // paillier_decrypt(sk, c_mul, *c_mul_len, &c_mul_de, c_mul_de_len);
+    
+    // char buf_mul[(*c_mul_de_len) + 1];
+    // memcpy(buf_mul, c_mul_de, *c_mul_de_len);
+    // buf_mul[*c_mul_de_len] = '\0';
+    // printf("add decrypt msg = %s, len = %d\n", buf_mul, *c_mul_de_len);
+}
+
+
+
+//{215,123,165,116,176,97,115,88,34,214,158,162,93,103,133,132,189,213,118,206,111,174,74,63,217,159,162,139,91,255,108,231,43,134,149,126,243,135,195,4,112,16,175,150,41,68,24,219,57,31,223,207,41,247,87,16,222,211,3,35,16,244,197,107,25,125,171,251,2,162,65,144,195,118,30,94,210,37,196,212,211,145,250,119,225,13,235,57,136,206,163,177,59,94,71,162,132,168,164,174,176,214,18,153,80,248,112,86,113,85,171,205,23,79,78,56,254,167,13,0,77,186,108,15,230,121,73,73};
+//{5,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,213,115,189,1,0,0,57,210,224,134,255,127,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,16,28,213,115,189,1,0,0,95,65,83,75,80,65,83,83,95,69,88,84,82,65,95,65,82,71,83,61,45,45,109,115,45,101,110,97,98,108,101,45,101,108,101,99,116,114,111,110,45,114,117,110,45,97,115,45,110,111,100,101,0,86,83,67,79,68,69,95,71,73,84,95};
+
+void paillierTest() {
+    PaillierPrivateKey *sk = (PaillierPrivateKey *)malloc(sizeof(PaillierPrivateKey));
+    PaillierPublicKey *pk = (PaillierPublicKey *)malloc(sizeof(PaillierPublicKey));
+    paillier_key_gen(sk, pk);
+
+    // for(int i = 0; i < 128; i++) {
+    //     printf("%d,", sk->n[i]);
+    // }
+    // printf("\n****\n");
+    // for(int i = 0; i < 128; i++) {
+    //     printf("%d,", sk->l[i]);
+    // }
+    // printf("\n");
+
+    // uint8_t n[128] = {27,126,248,40,171,197,156,126,60,89,17,116,139,94,172,48,185,212,218,252,142,250,250,248,49,122,52,58,168,34,222,151,193,136,134,187,249,139,189,151,169,251,130,223,76,91,21,99,156,76,206,240,97,73,161,60,152,64,196,155,94,100,27,120,160,235,74,36,31,193,56,199,31,204,137,65,162,4,250,193,102,178,43,36,97,135,252,8,183,181,190,16,25,220,67,168,231,179,53,104,117,68,153,32,192,157,208,72,37,128,126,230,49,130,187,63,168,49,205,235,186,184,249,29,124,175,139,243};
+    // uint8_t l[128] = {13,191,124,20,85,226,206,63,30,44,136,186,69,175,86,24,92,234,109,126,71,125,125,124,24,189,26,29,84,17,111,75,224,196,67,93,252,197,222,203,212,253,193,111,166,45,138,177,206,38,103,120,48,164,208,158,76,32,98,77,175,50,13,187,250,3,137,138,228,181,76,229,23,189,70,7,75,22,114,146,16,43,71,121,197,149,118,158,219,207,101,228,58,87,221,184,4,228,2,73,55,183,239,222,150,149,5,116,107,149,123,227,44,15,58,157,172,121,223,80,255,232,61,58,213,65,205,20};
+
+    // memcpy(sk->n, n, 128);
+    // memcpy(sk->l, l, 128);
+    // memcpy(pk->n, n, 128);
+
+    const char *msg = "nihao, shijie";
+    uint8_t *cipher = NULL;
+    size_t cipher_len = 0;
+    uint8_t *decrypt_m = NULL;
+    size_t decrypt_len = 0;
+    paillier_encrypt(pk, msg, strlen(msg), &cipher, &cipher_len);
+    paillier_decrypt(sk, cipher, cipher_len, &decrypt_m, &decrypt_len);
+    char buf[decrypt_len + 1];
+    memcpy(buf, decrypt_m, decrypt_len);
+    buf[decrypt_len] = '\0';
+    printf("base decrypt msg = %s, len = %d\n", buf, decrypt_len);
+
+
+
+
+    const uint8_t m1[1] = {97}, m2[1] = {96};
+    uint8_t *c1 = NULL, *c2 = NULL, *c_add = NULL, *c_add_de = NULL;
+    size_t c1_len = 0, c2_len = 0, c_add_len = 0, c_add_de_len = 0;
+    paillier_encrypt(pk, m1, 1, &c1, &c1_len);
+    paillier_encrypt(pk, m2, 1, &c2, &c2_len);
+    paillier_add(pk, c1, c1_len, c2, c2_len, &c_add, &c_add_len);
+    paillier_decrypt(sk, c_add, c_add_len, &c_add_de, &c_add_de_len);
+
+    printf("add decrypt msg = %d, len = %d\n", c_add_de[0], c_add_de_len);
+
+
+
+
+    const uint8_t m_mul[1] = {10};
+    uint8_t *c_mul = NULL, *c_mul_de = NULL;
+    size_t c_mul_len = 0, c_mul_de_len = 0;
+    paillier_mul(pk, c1, c1_len, m_mul, 1, &c_mul, &c_mul_len);
+    paillier_decrypt(sk, c_mul, c_mul_len, &c_mul_de, &c_mul_de_len);
+    printf("mul decrypt m[0] = %d, m[1] = %d, len = %d\n", c_mul_de[0], c_mul_de[1], c_mul_de_len);
+}
 
 // gcc test.c -L. -lalg -O3 -o test.exe
+// gcc *.c -lgmp -O3 -o test.exe
 int main() {
 
     // sm2Test();
-    // secTest();
+    secTest();
     // sm4Test();
 
     sm2CostTest();
 
-    // sm2CryptoTest();
+    sm2CryptoTest();
 
     // testBits();
+
+    paillierTest();
 
     return 0;
 }

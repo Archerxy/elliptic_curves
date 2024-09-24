@@ -263,8 +263,10 @@ void sm2p256v1_privateKey_to_publicKey(const EcPrivateKey *sk, EcPublicKey *pk) 
     mpz_export(xc, &lx, 1, 1, 0, 0, x);
     mpz_export(yc, &ly, 1, 1, 0, 0, y);
 
-    memcpy(pk->x, &(xc[32-lx]), lx);
-    memcpy(pk->y, &(yc[32-ly]), ly);
+    memset(pk->x, 0, 32);
+    memset(pk->y, 0, 32);
+    memcpy(pk->x + (32 - lx), xc, lx);
+    memcpy(pk->y + (32 - ly), yc, ly);
 
     mpz_clear(x);
     mpz_clear(y);
@@ -299,8 +301,10 @@ void sm2p256v1_sign(const EcPrivateKey *sk, const uint8_t *msg, const size_t msg
     mpz_export(rc, &lr, 1, 1, 0, 0, r);
     mpz_export(sc, &ls, 1, 1, 0, 0, s);
     
-    memcpy(sig->r, &(rc[32-lr]), lr);
-    memcpy(sig->s, &(sc[32-ls]), ls);
+    memset(sig->r, 0, 32);
+    memset(sig->s, 0, 32);
+    memcpy(sig->r + (32 - lr),rc, lr);
+    memcpy(sig->s + (32 - ls), sc, ls);
 
     mpz_clear(r);
     mpz_clear(s);
