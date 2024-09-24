@@ -143,66 +143,6 @@ void sm2CryptoTest() {
     }
 }
 
-void paillierTestInn() {
-    PaillierPrivateKey *sk = (PaillierPrivateKey *)malloc(sizeof(PaillierPrivateKey));
-    PaillierPublicKey *pk = (PaillierPublicKey *)malloc(sizeof(PaillierPublicKey));
-
-    memset(sk->n, 0, 128);
-    memset(sk->l, 0, 128);
-    memset(pk->n, 0, 128);
-    sk->n[126] = 2;
-    sk->n[127] = 201;
-    sk->l[126] = 1;
-    sk->l[127] = 74;
-    pk->n[126] = 2;
-    pk->n[127] = 201;
-
-
-    uint8_t m[1] = {8};
-    uint8_t *cipher = NULL;
-    size_t cipher_len = 0;
-    uint8_t *decrypt_m = NULL;
-    size_t decrypt_len = 0;
-    paillier_encrypt(pk, m, 1, &cipher, &cipher_len);
-    paillier_decrypt(sk, cipher, cipher_len, &decrypt_m, &decrypt_len);
-
-    printf("after dec decrypt_len = %d, decrypt_m[0] = %d\n", decrypt_len, decrypt_m[0]);
-    char buf[decrypt_len + 1];
-    memcpy(buf, decrypt_m, decrypt_len);
-    buf[decrypt_len] = '\0';
-    printf("decrypt msg = %s, len = %d\n", buf, decrypt_len);
-
-
-
-
-    // const uint8_t m1[1] = {97}, m2[1] = {96};
-    // uint8_t *c1 = NULL, *c2 = NULL, *c_add = NULL, *c_add_de = NULL;
-    // size_t *c1_len = 0, *c2_len = 0, *c_add_len = 0, *c_add_de_len = 0;
-    // paillier_encrypt(pk, m1, 1, &c1, c1_len);
-    // paillier_encrypt(pk, m2, 1, &c2, c2_len);
-    // paillier_add(pk, c1, *c1_len, c2, *c2_len, &c_add, c_add_len);
-    // paillier_decrypt(sk, c_add, *c_add_len, &c_add_de, c_add_de_len);
-
-    // char buf_add[(*c_add_de_len) + 1];
-    // memcpy(buf_add, c_add_de, *c_add_de_len);
-    // buf_add[*c_add_de_len] = '\0';
-    // printf("add decrypt msg = %s, len = %d\n", buf_add, *c_add_de_len);
-
-
-
-
-    // const uint8_t m_mul[1] = {10};
-    // uint8_t *c_mul = NULL, *c_mul_de = NULL;
-    // size_t *c_mul_len = 0, *c_mul_de_len = 0;
-    // paillier_mul(pk, c1, *c1_len, m_mul, 1, &c_mul, c_mul_len);
-    // paillier_decrypt(sk, c_mul, *c_mul_len, &c_mul_de, c_mul_de_len);
-    
-    // char buf_mul[(*c_mul_de_len) + 1];
-    // memcpy(buf_mul, c_mul_de, *c_mul_de_len);
-    // buf_mul[*c_mul_de_len] = '\0';
-    // printf("add decrypt msg = %s, len = %d\n", buf_mul, *c_mul_de_len);
-}
-
 
 
 void paillierTest() {
