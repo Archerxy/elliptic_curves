@@ -61,7 +61,7 @@ void secp256k1_privateKey_to_publicKey(const EcPrivateKey *sk, EcPublicKey *pk) 
     mpz_clear(d);
 }
 
-void secp256k1_sign(const EcPrivateKey *sk, const uint8_t *msg, const size_t msg_len, EcSignature *sig) {
+void secp256k1_sign(const EcPrivateKey *sk, const uint8_t *msg, const size_t msg_len, EcSignature *sig, int *recv_id) {
     if(!sk || !msg || !sig) {
         return ;
     }
@@ -82,17 +82,21 @@ void secp256k1_sign(const EcPrivateKey *sk, const uint8_t *msg, const size_t msg
     mpz_import(d, 32, 1, 1, 0, 0, sk->d);
     mpz_import(m, msg_len, 1, 1, 0, 0, msg);
     mpz_import(k, 32, 1, 1, 0, 0, raw_k);
+
     // s = (d * r + m) * k^(-1), r = k * G  
     ec_point_mul(r, s, k, _secp256k1->p, _secp256k1->a, _secp256k1->b, _secp256k1->gx, _secp256k1->gy);
+    int v = mpz_odd_p(s);
     mpz_mul(s, d, r);
     mpz_add(s, s, m);
     mpz_invert(k, k, _secp256k1->n);
     mpz_mul(s, s, k);
     mpz_mod(s, s, _secp256k1->n);
     mpz_mul_ui(k, s, 2);
-    if(mpz_cmp(k, _secp256k1->n) >= 0) {
+    if(mpz_cmp(k, _secp256k1->n) > 0) {
         mpz_sub(s, _secp256k1->n , s);
+        v ^= 1;
     }
+    *recv_id = v;
 
     size_t lr = 32, ls = 32;
     uint8_t rc[32], sc[32];
@@ -165,14 +169,7 @@ int secp256k1_verify(const EcPublicKey *pk, const uint8_t *msg, const size_t msg
     return ret;
 }
 
-int secp256k1_get_v(const EcSignature *sig) {
-    if(!sig) {
-        return 0;
-    }
-    return (sig->r[31] & 1) + 27;
-}
-
-void secp256k1_recover_publicKey(const EcSignature *sig, const uint8_t *msg, const size_t msg_len, EcPublicKey *pk) {
+void secp256k1_recover_publicKey(const EcSignature *sig, const uint8_t *msg, const size_t msg_len, int recv_id, EcPublicKey *pk) {
     if(!sig || !msg || !pk) {
         return ;
     }
@@ -200,8 +197,8 @@ void secp256k1_recover_publicKey(const EcSignature *sig, const uint8_t *msg, con
     mpz_add_ui(t, _secp256k1->p, 1);
     mpz_div_ui(t, t, 4);
     mpz_powm(y, y, t, _secp256k1->p);
-    int v = (sig->r[31] & 1) ? 0 : 1;
-    if(v) {
+    int odd = mpz_odd_p(y);
+    if(odd ^ recv_id) {
         mpz_sub(y, _secp256k1->p , y);
     }
     

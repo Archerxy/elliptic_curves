@@ -63,7 +63,6 @@ void paillier_encrypt(const PaillierPublicKey *pk, const uint8_t *msg, const siz
     mpz_init(rl);
     paillier_random(r, P_SIZE);
 
-
     mpz_import(m, msg_len, 1, 1, 0, 0, msg);
     mpz_import(n, N_SIZE, 1, 1, 0, 0, pk->n);
 

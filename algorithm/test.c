@@ -19,6 +19,7 @@ static void print_uints(const char *name, uint8_t *bs, size_t len) {
     fflush(stdout);
 }
 
+
 void sm2CostTest() {
     printf("****begin sm2 sign cost test****\n");
     uint8_t d[32] = {29, -3, 74, 47, 123, 64, 41, 123, 67, -9, 89, 16, 84, 115, 18, -8, -41, -97, -57, 36, 103, 60, 115, -123, -5, -38, -97, 127, 32, -21, -25, 2};
@@ -58,15 +59,16 @@ void secTest() {
     printf("****begin secp256k1 sign test****\n");
     uint8_t d[32] = {29, -3, 74, 47, 123, 64, 41, 123, 67, -9, 89, 16, 84, 115, 18, -8, -41, -97, -57, 36, 103, 60, 115, -123, -5, -38, -97, 127, 32, -21, -25, 2};
     uint8_t p[64] = {36, 117, -87, 86, -21, 0, 78, 37, -128, -38, -1, -36, -74, -16, 60, -55, -46, 47, -29, -101, 95, 53, 113, 31, 0, 37, -46, 89, -70, -126, 10, -86, 44, -69, -127, -11, -19, 120, -83, 90, 46, 81, 15, -101, -16, -87, -106, -67, -33, -23, 18, 54, -67, 36, 99, 11, 59, -73, -96, 99, -98, 95, -115, -68};
-	
+
     EcPrivateKey sk;
     EcPublicKey pk;
     EcSignature sig;
+    int recv_id = 0;
     memcpy(sk.d, d, 32);
     memcpy(pk.x, p, 32);
     memcpy(pk.y, &(p[32]), 32);
     printf("****start secp256k1 sign****\n");
-    secp256k1_sign(&sk, d, 32, &sig);
+    secp256k1_sign(&sk, d, 32, &sig, &recv_id);
     printf("****after secp256k1 sign****\n");
     print_uints("sig = ", (uint8_t *)&sig, 64);
     int ret = secp256k1_verify(&pk, d, 32, &sig);
@@ -74,8 +76,10 @@ void secTest() {
 
     print_uints("pk = ", p, 64);
     EcPublicKey pk_new;
-    secp256k1_recover_publicKey(&sig, d, 32, &pk_new);
-    print_uints("pk_new = ", (uint8_t *)&pk_new, 64);
+    secp256k1_recover_publicKey(&sig, d, 32, recv_id, &pk_new);
+    printf("recv_id = %d\n", recv_id);
+    print_uints("pk_new= ", (uint8_t *)&pk_new, 64);
+    
 }
 
 void sm2Test() {
@@ -143,88 +147,10 @@ void sm2CryptoTest() {
     }
 }
 
-void paillierTestInn() {
-    PaillierPrivateKey *sk = (PaillierPrivateKey *)malloc(sizeof(PaillierPrivateKey));
-    PaillierPublicKey *pk = (PaillierPublicKey *)malloc(sizeof(PaillierPublicKey));
-
-    memset(sk->n, 0, 128);
-    memset(sk->l, 0, 128);
-    memset(pk->n, 0, 128);
-    sk->n[126] = 2;
-    sk->n[127] = 201;
-    sk->l[126] = 1;
-    sk->l[127] = 74;
-    pk->n[126] = 2;
-    pk->n[127] = 201;
-
-
-    uint8_t m[1] = {8};
-    uint8_t *cipher = NULL;
-    size_t cipher_len = 0;
-    uint8_t *decrypt_m = NULL;
-    size_t decrypt_len = 0;
-    paillier_encrypt(pk, m, 1, &cipher, &cipher_len);
-    paillier_decrypt(sk, cipher, cipher_len, &decrypt_m, &decrypt_len);
-
-    printf("after dec decrypt_len = %d, decrypt_m[0] = %d\n", decrypt_len, decrypt_m[0]);
-    char buf[decrypt_len + 1];
-    memcpy(buf, decrypt_m, decrypt_len);
-    buf[decrypt_len] = '\0';
-    printf("decrypt msg = %s, len = %d\n", buf, decrypt_len);
-
-
-
-
-    // const uint8_t m1[1] = {97}, m2[1] = {96};
-    // uint8_t *c1 = NULL, *c2 = NULL, *c_add = NULL, *c_add_de = NULL;
-    // size_t *c1_len = 0, *c2_len = 0, *c_add_len = 0, *c_add_de_len = 0;
-    // paillier_encrypt(pk, m1, 1, &c1, c1_len);
-    // paillier_encrypt(pk, m2, 1, &c2, c2_len);
-    // paillier_add(pk, c1, *c1_len, c2, *c2_len, &c_add, c_add_len);
-    // paillier_decrypt(sk, c_add, *c_add_len, &c_add_de, c_add_de_len);
-
-    // char buf_add[(*c_add_de_len) + 1];
-    // memcpy(buf_add, c_add_de, *c_add_de_len);
-    // buf_add[*c_add_de_len] = '\0';
-    // printf("add decrypt msg = %s, len = %d\n", buf_add, *c_add_de_len);
-
-
-
-
-    // const uint8_t m_mul[1] = {10};
-    // uint8_t *c_mul = NULL, *c_mul_de = NULL;
-    // size_t *c_mul_len = 0, *c_mul_de_len = 0;
-    // paillier_mul(pk, c1, *c1_len, m_mul, 1, &c_mul, c_mul_len);
-    // paillier_decrypt(sk, c_mul, *c_mul_len, &c_mul_de, c_mul_de_len);
-    
-    // char buf_mul[(*c_mul_de_len) + 1];
-    // memcpy(buf_mul, c_mul_de, *c_mul_de_len);
-    // buf_mul[*c_mul_de_len] = '\0';
-    // printf("add decrypt msg = %s, len = %d\n", buf_mul, *c_mul_de_len);
-}
-
-
-
 void paillierTest() {
     PaillierPrivateKey *sk = (PaillierPrivateKey *)malloc(sizeof(PaillierPrivateKey));
     PaillierPublicKey *pk = (PaillierPublicKey *)malloc(sizeof(PaillierPublicKey));
     paillier_key_gen(sk, pk);
-
-    // for(int i = 0; i < 128; i++) {
-    //     printf("%d,", sk->n[i]);
-    // }
-    // printf("\n****\n");
-    // for(int i = 0; i < 128; i++) {
-    //     printf("%d,", sk->l[i]);
-    // }
-    // printf("\n");
-
-    // uint8_t n[128] = {27,126,248,40,171,197,156,126,60,89,17,116,139,94,172,48,185,212,218,252,142,250,250,248,49,122,52,58,168,34,222,151,193,136,134,187,249,139,189,151,169,251,130,223,76,91,21,99,156,76,206,240,97,73,161,60,152,64,196,155,94,100,27,120,160,235,74,36,31,193,56,199,31,204,137,65,162,4,250,193,102,178,43,36,97,135,252,8,183,181,190,16,25,220,67,168,231,179,53,104,117,68,153,32,192,157,208,72,37,128,126,230,49,130,187,63,168,49,205,235,186,184,249,29,124,175,139,243};
-    // uint8_t l[128] = {13,191,124,20,85,226,206,63,30,44,136,186,69,175,86,24,92,234,109,126,71,125,125,124,24,189,26,29,84,17,111,75,224,196,67,93,252,197,222,203,212,253,193,111,166,45,138,177,206,38,103,120,48,164,208,158,76,32,98,77,175,50,13,187,250,3,137,138,228,181,76,229,23,189,70,7,75,22,114,146,16,43,71,121,197,149,118,158,219,207,101,228,58,87,221,184,4,228,2,73,55,183,239,222,150,149,5,116,107,149,123,227,44,15,58,157,172,121,223,80,255,232,61,58,213,65,205,20};
-
-    // memcpy(sk->n, n, 128);
-    // memcpy(sk->l, l, 128);
-    // memcpy(pk->n, n, 128);
 
     const char *msg = "nihao, shijie";
     uint8_t *cipher = NULL;
@@ -272,11 +198,11 @@ int main() {
 
     sm2CostTest();
 
-    sm2CryptoTest();
+    // sm2CryptoTest();
 
     // testBits();
 
-    paillierTest();
+    // paillierTest();
 
     return 0;
 }
