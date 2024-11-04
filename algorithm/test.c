@@ -196,7 +196,7 @@ int main() {
     secTest();
     // sm4Test();
 
-    sm2CostTest();
+    // sm2CostTest();
 
     // sm2CryptoTest();
 
